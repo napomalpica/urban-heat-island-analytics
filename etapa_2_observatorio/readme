@@ -1,0 +1,113 @@
+# Observatorio de Islas de Calor Urbano (UHI) — Aplicación Global
+
+*Read this in [English](#english-version)*
+
+---
+
+## ¿De qué trata este proyecto?
+
+En verano, la temperatura en una ciudad no sube de manera uniforme: los parques y las orillas del río se mantienen frescos, mientras que las zonas con mucho asfalto, cemento y techos oscuros acumulan calor extremo. Si solo miramos el promedio de un distrito, no vemos qué pasa a nivel de calle; y si solo miramos un mapa de calor sin datos de población, no sabemos a cuántas personas afecta realmente.
+
+Este proyecto une ambos mundos para analizar las islas de calor y la vulnerabilidad térmica. Aunque en este repositorio utilizamos a **París (Francia)** como nuestro caso de estudio principal de los 20 arrondissements (del 1er al 20ème) entre 2016 y 2026, **la plataforma y el código son completamente agnósticos y se pueden aplicar en cualquier ciudad del mundo** donde se quiera estudiar el clima urbano.
+
+---
+
+## ¿Cómo está organizado el repositorio?
+
+El trabajo se divide en dos etapas independientes:
+
+* **`uhi_data_pipeline.ipynb` (Etapa 1 — Procesamiento de datos):** Es un cuaderno en Python conectado a Google Earth Engine. Se encarga de descargar las imágenes de los satélites (Landsat y Sentinel), eliminar las nubes, cruzar la información con los límites geográficos y generar la tabla histórica que alimenta los análisis.
+* **`etapa_2_observatorio/` (Etapa 2 — Aplicación web):** Es la plataforma interactiva (hecha en Streamlit y Folium) que se conecta en vivo con los satélites para mostrar los píxeles de calor reales (de 30x30 metros) sobre el mapa. Permite cambiar de año, consultar datos por distrito o comuna, ver gráficos y descargar las tablas en tres idiomas (Español, Francés e Inglés).
+
+---
+
+## Guía rápida de los indicadores
+
+Para que cualquier persona pueda interpretar los datos fácilmente, la herramienta se basa en cuatro conceptos clave:
+
+1. **Temperatura de Superficie (LST - °C):** Es el calor real que emiten los materiales de la ciudad (el asfalto, los techos, las calles) al recibir el sol, medido por satélite a 30 metros de resolución. No es la temperatura del aire a la sombra, sino qué tan calientes están las superficies.
+2. **Índice de Vegetación (NDVI - de -1 a +1):** Mide la cantidad y salud de los árboles y plantas. Los valores cercanos a 0 indican suelo mineral o asfalto, mientras que los valores altos (más de 0.4) señalan parques arbolados.
+3. **Población Expuesta (Habitantes):** La cantidad de gente que vive de forma permanente en cada zona. Sirve para distinguir entre una zona industrial muy caliente pero sin habitantes y un barrio residencial denso que sufre estrés térmico.
+4. **Índice de Vulnerabilidad Urbana (UVI - 0 a 100):** Un puntaje práctico para priorizar dónde hacer mejoras urbanas (como plantar árboles). Combina el calor del suelo (50%), la falta de vegetación (30%) y la cantidad de personas afectadas (20%).
+
+---
+
+## ¿Cómo adaptar este modelo a otra ciudad?
+
+Cualquier investigador, técnico o urbanista puede replicar este observatorio en su propia ciudad siguiendo estos pasos:
+1. **Definir los límites:** Reemplaza los polígonos o el archivo GeoJSON de distritos por los límites administrativos o comunales de la ciudad que deseas estudiar.
+2. **Ajustar el visor (Etapa 2):** En el archivo `app.py`, cambia las coordenadas centrales de París por las de tu ciudad y actualiza el archivo de datos con los resultados de tu nueva zona de estudio.
+
+---
+
+## ¿Cómo probar esta aplicación en tu computadora?
+
+1. Descarga el repositorio:
+   `git clone https://github.com/napomalpica/urban-heat-island-analytics.git`
+   `cd urban-heat-island-analytics/etapa_2_observatorio`
+
+2. Instala los paquetes necesarios de Python:
+   `pip install -r requirements.txt`
+
+3. **Credenciales:** Para que el mapa descargue las imágenes satelitales en vivo, necesitas una cuenta de servicio de Google Earth Engine. Guarda tu llave privada en formato JSON dentro de esta misma carpeta con el nombre `gee_credentials.json` y configura tu correo en el código.
+
+4. Inicia la página web local:
+   `streamlit run app.py`
+
+---
+---
+
+<a name="english-version"></a>
+
+# Urban Heat Island (UHI) Observatory — Global Application
+
+*Lee esto en [Español](#español)*
+
+---
+
+## What is this project about?
+
+During summer heatwaves, city temperatures vary sharply from street to street. Wooded parks and riverbanks stay cool, while dense areas with asphalt, stone, and dark roofs trap extreme heat. Looking only at district-wide averages hides street-level hotspots, while looking at thermal maps alone ignores how many people actually live in those areas.
+
+This project bridges both perspectives to analyze urban heat islands and thermal vulnerability. While this repository uses **Paris (France)** as the main case study across its 20 arrondissements (1er to 20ème) from 2016 to 2026, **the codebase and platform are entirely region-agnostic and can be deployed in any city worldwide**.
+
+---
+
+## Repository Structure
+
+The project is split into two independent stages:
+
+* **`uhi_data_pipeline.ipynb` (Stage 1 — Data Processing):** A Python notebook connected to Google Earth Engine. It queries satellite collections (Landsat and Sentinel), removes cloud cover, aggregates data across district boundaries, and outputs the historical master dataset.
+* **`etapa_2_observatorio/` (Stage 2 — Web Application):** An interactive dashboard built with Streamlit and Folium that fetches live satellite data to render actual 30x30m thermal pixels over the streets. It features multi-year filters, charts, downloadable CSVs, and a trilingual interface (Spanish, French, English).
+
+---
+
+## Plain-Language Guide to the Indicators
+
+1. **Land Surface Temperature (LST - °C):** The actual radiative heat emitted by urban materials (asphalt, roofs, streets) under sunlight, measured by satellite at 30-meter resolution. It shows how hot surfaces get rather than ambient air temperature in the shade.
+2. **Vegetation Index (NDVI - -1 to +1):** Measures the density and health of trees and green spaces. Values near 0 indicate bare stone or asphalt, while higher values (> 0.4) indicate dense parks.
+3. **Exposed Population (Inhabitants):** The permanent resident population per district. This helps separate a hot but uninhabited industrial zone from a densely populated neighborhood suffering from severe heat stress.
+4. **Urban Vulnerability Index (UVI - 0 to 100):** A practical score designed to prioritize urban adaptation measures (like tree planting). It combines surface heat (50%), lack of vegetation (30%), and resident population (20%).
+
+---
+
+## How to adapt this workflow to another city
+
+1. **Define boundaries:** Replace the district polygons or GeoJSON file with the administrative boundaries or wards of your target city.
+2. **Update the dashboard (Stage 2):** In `app.py`, change the map center coordinates to match your city and point the data loader to your newly generated dataset.
+
+---
+
+## How to run this app locally
+
+1. Clone the repository:
+   `git clone https://github.com/napomalpica/urban-heat-island-analytics.git`
+   `cd urban-heat-island-analytics/etapa_2_observatorio`
+
+2. Install the required Python libraries:
+   `pip install -r requirements.txt`
+
+3. **Credentials:** To load live satellite tiles, you need a Google Earth Engine service account. Place your JSON private key inside this folder named `gee_credentials.json` and configure your account email in the code.
+
+4. Launch the local dashboard:
+   `streamlit run app.py`
