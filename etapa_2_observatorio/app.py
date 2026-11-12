@@ -267,12 +267,11 @@ if auth_status is not True:
 
 # 6. CARGA DE DATOS TABULARES Y GEOJSON
 @st.cache_data
+@st.cache_data
 def load_tabular_data():
-    import os
-# ...
-script_dir = os.path.dirname(os.path.abspath(__file__))
-csv_path = os.path.join(script_dir, "uhi_timeseries_master.csv")
-df = pd.read_csv(csv_path)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    csv_path = os.path.join(script_dir, "uhi_timeseries_master.csv")
+    df = pd.read_csv(csv_path)
     for col in ['LST_Landsat_30m', 'NDVI_S2_10m', 'Population_Count']:
         df[f'{col}_norm'] = (df[col] - df[col].min()) / (df[col].max() - df[col].min())
     df['NDVI_inv'] = 1 - df['NDVI_S2_10m_norm']
