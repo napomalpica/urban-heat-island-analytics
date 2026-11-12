@@ -1,76 +1,36 @@
 *Read the [English version below](#english-version)*
 
-# Urban Heat Island (UHI) Analytics Pipeline
+# Análisis y Observatorio de Islas de Calor Urbano (UHI)
 
-Este repositorio contiene el código fuente para procesar, analizar y clasificar la Isla de Calor Urbana (UHI) utilizando datos satelitales y de reanálisis climático. 
+Este repositorio contiene el flujo de trabajo completo para extraer, procesar y visualizar el fenómeno de Isla de Calor Urbana (UHI) y la exposición térmica de la población a partir de imágenes satelitales y datos demográficos. 
 
-El proyecto toma datos espaciales brutos, corrige vacíos de información por nubosidad, aplica algoritmos de clustering y genera un modelo de datos estructurado listo para ser consumido por herramientas de Business Intelligence.
-
-## Pipeline de datos
-
-El flujo de trabajo se divide en dos componentes técnicos:
-
-### 1. Extracción y procesamiento (Python / Google Earth Engine)
-El script principal (`01_uhi_preprocessing_pipeline.ipynb`) realiza las siguientes operaciones:
-- **Fusión de sensores:** Extrae series temporales de Sentinel-2 (NDVI, 10m) y Landsat 8/9 (LST, 30m) utilizando la API de Google Earth Engine.
-- **Variables macroclimáticas:** Integra datos de temperatura del aire a 2 metros y humedad volumétrica del suelo provenientes de ERA5-Land.
-- **Tratamiento de nulos:** Implementa un método de interpolación temporal para corregir lecturas perdidas por alta cobertura de nubes, generando columnas de auditoría para trazar los datos proyectados.
-- **Clustering:** Aplica K-Means (k=3) sobre las variables estandarizadas para clasificar las zonas en tres niveles relativos de vulnerabilidad térmica.
-
-### 2. Visualización y modelado (Power BI)
-El archivo CSV resultante alimenta un dashboard interactivo que cruza las variables espaciales y categoriza dinámicamente los niveles de riesgo (ej. estrés hídrico del suelo) mediante fórmulas DAX, basándose en umbrales de literatura científica.
-
-## Dashboard
-
-Vista general del panel implementado para el cruce de variables ambientales:
-
-<p align="center">
-  <img src="dashboard.png" alt="Vista del Dashboard en Power BI" width="100%">
-</p>
-
-## Notas metodológicas y limitaciones
-
-Para interpretar correctamente los resultados de este modelo, es necesario considerar las siguientes limitaciones físicas y espaciales:
-
-- **LST vs. T2m:** La temperatura de superficie (Landsat) mide la radiación de los materiales, que siempre será significativamente mayor a la temperatura del aire durante el día. El modelo no las iguala, sino que evalúa su desacoplamiento estacional.
-- **Escala de ERA5:** Los datos de reanálisis tienen una resolución nativa de aproximadamente 9 km. Se utilizan como un indicador de la tendencia macroclimática (balance hídrico estacional) y no como mediciones microclimáticas a nivel de calle.
-- **MAUP (Modifiable Areal Unit Problem):** Al realizar reducciones espaciales (medias) a nivel de distrito o código postal, se asume una dilución de los microclimas internos, promediando zonas altamente asfaltadas con parques urbanos dentro del mismo polígono.
+Aunque el caso de estudio principal está configurado para los **20 arrondissements de París (1er al 20ème)** entre 2016 y 2026, la arquitectura está diseñada para ser replicable en cualquier otra ciudad.
 
 ---
 
-<a name="english-version"></a>
-# Urban Heat Island (UHI) Analytics Pipeline (English)
+## Organización del repositorio (Dos Etapas)
 
-This repository contains the source code to process, analyze, and classify the Urban Heat Island (UHI) effect using satellite and climate reanalysis data. 
+El proyecto se divide en dos fases independientes pero complementarias:
 
-The project takes raw spatial data, corrects missing information due to cloud cover, applies clustering algorithms, and outputs a structured data model ready for Business Intelligence tools.
+* **`uhi_data_pipeline.ipynb` (Etapa 1 — Extracción y procesamiento de datos):** Notebook en Python conectado a Google Earth Engine que filtra la nubosidad, procesa las colecciones satelitales (Landsat 8/9, Sentinel-2, ERA5-Land y WorldPop) y genera la serie histórica consolidada por distrito para su análisis estadístico o uso en herramientas como Power BI.
+* **`etapa_2_observatorio/` (Etapa 2 — Visor cartográfico web en tiempo real):** Aplicación interactiva desarrollada en Streamlit y Folium (disponible en español, francés e inglés). Conecta en vivo con los servidores de Google Earth Engine para dibujar los píxeles reales de calor (resolución de 30x30 metros) sobre el mapa de calles y edificios de la ciudad, superponiendo los límites administrativos, gráficos de evolución histórica y tablas de datos descargables.
 
-## Data Pipeline
+---
 
-The workflow is divided into two technical components:
+## ¿Qué mide cada indicador? (Guía rápida)
 
-### 1. Extraction and processing (Python / Google Earth Engine)
-The main script (`01_uhi_preprocessing_pipeline.ipynb`) performs the following operations:
-- **Sensor fusion:** Extracts time series from Sentinel-2 (NDVI, 10m) and Landsat 8/9 (LST, 30m) using the Google Earth Engine API.
-- **Macroclimatic variables:** Integrates 2-meter air temperature and volumetric soil moisture data from ERA5-Land.
-- **Null treatment:** Implements a temporal interpolation method to correct missing readings due to high cloud cover, generating audit columns to track projected data.
-- **Clustering:** Applies K-Means (k=3) on standardized variables to classify zones into three relative levels of thermal vulnerability.
+Para que la herramienta sea útil tanto en análisis técnico como en gestión urbana, el observatorio resume la información en cuatro variables:
 
-### 2. Visualization and modeling (Power BI)
-The resulting CSV file feeds an interactive dashboard that cross-references spatial variables and dynamically categorizes risk levels (e.g., soil water stress) using DAX formulas, based on thresholds from scientific literature.
+1. **Temperatura de Superficie — LST (°C):** Es el calor directo que emiten los tejados, el asfalto y el suelo al calentarse con el sol, medido por el sensor térmico de los satélites Landsat 8 y 9 cada 30 metros. No debe confundirse con la temperatura del aire a la sombra: mide qué materiales y calles acumulan más calor.
+2. **Índice de Vegetación — NDVI (escala de -1 a +1):** Mide la presencia y densidad de árboles y áreas verdes mediante el satélite Sentinel-2 (a 10 metros de detalle). Valores cercanos a `0` corresponden a piedra, cemento o asfalto; valores por encima de `0.40` indican parques arbolados.
+3. **Exposición Demográfica (Habitantes):** Número de residentes permanentes dentro de cada distrito (datos de WorldPop). Permite diferenciar entre una zona industrial muy cálida pero deshabitada y un barrio residencial denso donde el calor afecta a miles de personas.
+4. **Índice de Vulnerabilidad Urbana — UVI (0 a 100 puntos):** Indicador sintético pensado para priorizar intervenciones urbanas (como arbolado o adaptación de espacios públicos). Combina en una sola escala la temperatura superficial (50%), el déficit de vegetación (30%) y la población residente (20%).
 
-## Dashboard
+---
 
-Overview of the implemented dashboard for cross-referencing environmental variables:
+## Cómo ejecutar el observatorio (Etapa 2) en local
 
-<p align="center">
-  <img src="dashboard.png" alt="Power BI Dashboard View" width="100%">
-</p>
-
-## Methodological notes and limitations
-
-To correctly interpret the results of this model, the following physical and spatial limitations must be considered:
-
-- **LST vs. T2m:** Land Surface Temperature (Landsat) measures the radiation of materials, which will always be significantly higher than the air temperature during the day. The model does not equate them, but rather evaluates their seasonal decoupling.
-- **ERA5 Scale:** Reanalysis data has a native resolution of approximately 9 km. They are used as an indicator of macroclimatic trends (seasonal water balance) and not as street-level microclimatic measurements.
-- **MAUP (Modifiable Areal Unit Problem):** By performing spatial reductions (averages) at the district or postal code level, the model assumes a dilution of internal microclimates, averaging highly paved areas with urban parks within the same polygon.
+1. Clona este repositorio y entra en la carpeta de la segunda etapa:
+   ```bash
+   git clone [https://github.com/napomalpica/urban-heat-island-analytics.git](https://github.com/napomalpica/urban-heat-island-analytics.git)
+   cd urban-heat-island-analytics/etapa_2_observatorio
